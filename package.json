@@ -1,0 +1,26 @@
+{
+  "name": "@theqrl/validate-qrl-address",
+  "version": "0.1.0",
+  "description": "Validates QRL addresses",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha --reporter spec"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/theQRL/validate-qrl-address.git"
+  },
+  "author": "QRL contributors <info@theqrl.org> (https://theqrl.org)",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/theQRL/validate-qrl-address/issues"
+  },
+  "homepage": "https://github.com/theQRL/validate-qrl-address#readme",
+  "dependencies": {
+    "sha256": "^0.2.0"
+  },
+  "devDependencies": {
+    "chai": "^4.1.2",
+    "mocha": "^5.0.5"
+  }
+}
