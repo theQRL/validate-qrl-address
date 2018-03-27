@@ -19,13 +19,7 @@ function hexToBytes(hex) {
     bytes.push(parseInt(hex.substr(c, 2), 16));
   return bytes;
 }
-function bytesToHex(bytes) {
-  for (var hex = [], i = 0; i < bytes.length; i++) {
-    hex.push((bytes[i] >>> 4).toString(16));
-    hex.push((bytes[i] & 0xf).toString(16));
-  }
-  return hex.join("");
-}
+
 function byte2bits(a) {
   var tmp = "";
   for (var i = 128; i >= 1; i /= 2) tmp += a & i ? "1" : "0";
@@ -73,14 +67,14 @@ const checkXMSS = (q) => {
   if (
     (b[1].toString() === '0000') ||
     (b[1].toString() === '0001') ||
-    (b[1].toString() === '0002')
+    (b[1].toString() === '0010')
   ) {
     debug.hash.message = 'valid HASH mechanism'
     debug.hash.result = true
     passed += 1
     if (b[1].toString() === '0000') { debug.hash.function = 'SHA2-256' }
     if (b[1].toString() === '0001') { debug.hash.function = 'SHAKE-128' }
-    if (b[1].toString() === '0002') { debug.hash.function = 'SHAKE-256' }
+    if (b[1].toString() === '0010') { debug.hash.function = 'SHAKE-256' }
   } else {
     debug.hash.message = 'invalid HASH mechanism'
     debug.hash.result = false
