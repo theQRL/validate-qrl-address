@@ -1,0 +1,49 @@
+# root: true
+# enable ES6
+parserOptions:
+  ecmaVersion: 6
+  sourceType: "module"
+  ecmaFeatures:
+    jsx: true # enable React's JSX
+
+# register plugins
+plugins:
+  - meteor
+
+# use the rules of eslint-config-airbnb
+# and the recommended rules of eslint-plugin-meteor
+extends:
+  - airbnb-base
+  - plugin:meteor/recommended
+
+# registerenvironments
+env:
+  meteor: true
+  browser: true
+  node: true
+  es6: true
+
+rules:
+  # overwrite some rules (avoid semicolons) 
+  semi: [2, 'never']
+  # import/no-unresolved: 0
+  import/extensions:
+    - off
+    - never
+  meteor/no-session: [0] # allow Session
+
+ 
+
+globals:
+  # collections
+  # Foo: false
+  # Bar: false
+
+  # packages
+  FlowRouter: false # kadira:flow-router
+  moment: false # momentjs:moment
+  BlazeLayout: false
+  
+settings:
+  import/core-modules: [ meteor ]
+  import/resolver: meteor
