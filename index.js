@@ -1,4 +1,5 @@
 const sha256 = require('sha256')
+const b32 = require('bech32')
 
 const checklength = (q) => {
   if (q.length === 79) {
@@ -84,6 +85,7 @@ const checkXMSS = (q) => {
     debug.sig.result = true
     debug.sig.type = 'XMSS'
     let height = parseInt(b[3], 2)
+    console.log("height", height)
     height *= 2
     debug.sig.height = height
     debug.sig.number = Math.pow(2, height) // eslint-disable-line
@@ -98,6 +100,50 @@ const checkXMSS = (q) => {
     debug.result = false
   }
   return debug
+}
+
+const bech32 = (q) => {
+  decoded = b32.decode(q)  // will fail if address invalid
+  bin = new Uint8Array(b32.fromWords(decoded.words))
+  
+  const debug = { hash: {}, sig: {} }
+  let passed = 0
+  const b = (split2Bits(bin, 4))[0]
+  if (
+    (b[1].toString() === '0000') ||
+    (b[1].toString() === '0001') ||
+    (b[1].toString() === '0010')
+  ) {
+    debug.hash.message = 'valid HASH mechanism'
+    debug.hash.result = true
+    passed += 1
+    if (b[1].toString() === '0000') { debug.hash.function = 'SHA2-256' }
+    if (b[1].toString() === '0001') { debug.hash.function = 'SHAKE-128' }
+    if (b[1].toString() === '0010') { debug.hash.function = 'SHAKE-256' }
+  } else {
+    debug.hash.message = 'invalid HASH mechanism'
+    debug.hash.result = false
+  }
+  if (b[0].toString() === '0000') {
+    debug.sig.message = 'valid signature scheme'
+    debug.sig.result = true
+    debug.sig.type = 'XMSS'
+    let height = parseInt(b[3], 2)
+    height *= 2
+    debug.sig.height = height
+    debug.sig.number = Math.pow(2, height) // eslint-disable-line
+    passed += 1
+  } else {
+    debug.sig.message = 'invalid signature scheme'
+    debug.sig.result = false
+  }
+  if (passed === 2) {
+    debug.result = true
+  } else {
+    debug.result = false
+  }
+  return debug
+
 }
 
 const hexString = (q) => {
@@ -162,6 +208,7 @@ const hexString = (q) => {
   return debug
 }
 
+exports.bech32 = bech32
 exports.hexString = hexString
 // module.exports = checkXMSS
 // module.exports = checkQ
