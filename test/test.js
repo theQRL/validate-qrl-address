@@ -69,3 +69,59 @@ describe('#validateHexString', function() {
     expect(result.sig.result).to.equal(false);
   });
 });
+
+
+describe('#validateBech32', function() {
+  it('should return true: argument is a valid address', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result).to.have.property('result', true);
+  });
+  it('should return xmss as name of signature scheme', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result.sig.type).to.equal('XMSS');
+  });
+  it('should return XMSS tree height of 14', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result.sig.height).to.equal(14);
+  });
+  it('should return number of XMSS signatures as 16384 (2^14)', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result.sig.number).to.equal(16384);
+  });
+  it('should return shake-128 as name of the hashing method', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result.hash.function).to.equal('SHAKE-128');
+  });
+  it('should return false: argument is NOT a valid address', function() {
+    var result = validate.bech32('a1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result).to.have.property('result', false);
+  });
+  it('should return false: argument is NOT a valid address length', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6fr');
+    expect(result).to.have.property('result', false);
+  });
+  it('should return true: argument does have a valid hashing mechanism', function() {
+    var result = validate.bech32('q1qgrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43wjv3gwn');
+    expect(result.hash).to.have.property('result', true);
+  });
+  it('should return false: argument does NOT a valid hashing mechanism', function() {
+    var result = validate.bech32('q1qvrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43wk9vvyf');
+    expect(result.hash).to.have.property('result', false);
+  });
+  it('should return false: argument does NOT have a valid BECH32 checksum', function() {
+    var result = validate.bech32('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm23c7ze43w7hlys5');
+    expect(result).to.have.property('result', false);
+  });
+  it('should return sha2-256 as name of the hashing method', function() {
+    var result = validate.bech32('q1qqrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w67zq6w');
+    expect(result.hash.function).to.equal('SHA2-256');
+  });
+  it('should return shake-256 as name of the hashing method', function() {
+    var result = validate.bech32('q1qgnqqcxewn73ltev9vxfrk0r8jhf7x6zyzxxy95lj33h8tnyrx9e0dj83nrpga');
+    expect(result.hash.function).to.equal('SHAKE-256');
+  });
+  it('should return false: argument does not have a valid signature scheme', function() {
+    var result = validate.bech32('q1zvrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w46026y');
+    expect(result.sig.result).to.equal(false);
+  });
+});

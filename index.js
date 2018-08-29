@@ -28,6 +28,7 @@ function byte2bits(a) {
   for (let i = 128; i >= 1; i /= 2) tmp += a & i ? '1' : '0'
   return tmp
 }
+
 function split2Bits(a, n) {
   let buff = ''
   const b = []
@@ -106,12 +107,44 @@ const prepareDescriptorFromHex = (q) => {
   return descriptor
 }
 
+
+function b32Encode(input) {
+  return b32.encode('q', b32.toWords(input))
+}
+
+function b32Decode(input) {
+  const a = b32.decode(input)
+  if (a.prefix !== 'q') {
+    throw new Error('This is not a QRL address')
+  }
+  return Uint8Array.from(b32.fromWords(a.words))
+}
+
 const bech32 = (q) => {
-  const decoded = b32.decode(q) // will fail if address invalid
+  const debug = {
+    hash: {},
+    sig: {},
+    result: false,
+  }
+
+  let decoded = ''
+  try {
+    decoded = b32.decode(q)
+    if (decoded.prefix !== 'q') {
+      return debug
+    }
+    debug.result = true
+  } catch (e) { // This happens when it fails the BECH32 checksum
+    return debug
+  }
   const bin = new Uint8Array(b32.fromWords(decoded.words))
 
   const descriptor = (split2Bits(bin, 4))[0]
-  return checkDescriptor(descriptor)
+  const d = checkDescriptor(descriptor)
+  debug.hash = d.hash
+  debug.sig = d.sig
+
+  return debug
 }
 
 const hexString = (q) => {
