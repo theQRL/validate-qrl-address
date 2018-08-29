@@ -16,44 +16,47 @@ const checkQ = (q) => {
 }
 
 function hexToBytes(hex) {
-  for (var bytes = [], c = 0; c < hex.length; c += 2)
-    bytes.push(parseInt(hex.substr(c, 2), 16));
-  return bytes;
+  const bytes = []
+  for (let c = 0; c < hex.length; c += 2) {
+    bytes.push(parseInt(hex.substr(c, 2), 16))
+  }
+  return bytes
 }
 
 function byte2bits(a) {
-  var tmp = "";
-  for (var i = 128; i >= 1; i /= 2) tmp += a & i ? "1" : "0";
-  return tmp;
+  let tmp = ''
+  for (let i = 128; i >= 1; i /= 2) tmp += a & i ? '1' : '0'
+  return tmp
 }
 function split2Bits(a, n) {
-  var buff = "";
-  var b = [];
-  for (var i = 0; i < a.length; i++) {
-    buff += byte2bits(a[i]);
+  let buff = ''
+  const b = []
+  for (let i = 0; i < a.length; i++) {
+    buff += byte2bits(a[i])
     while (buff.length >= n) {
-      b.push(buff.substr(0, n));
-      buff = buff.substr(n);
+      b.push(buff.substr(0, n))
+      buff = buff.substr(n)
     }
   }
-  return [b, buff];
+  return [b, buff]
 }
 
-function toByteArray(hexString) {
-  var result = [];
-  while (hexString.length >= 2) {
-    result.push(parseInt(hexString.substring(0, 2), 16));
-    hexString = hexString.substring(2, hexString.length);
+function toByteArray(hexStringInput) {
+  const result = []
+  while (hexStringInput.length >= 2) {
+    result.push(parseInt(hexStringInput.substring(0, 2), 16))
+    hexStringInput = hexStringInput.substring(2, hexStringInput.length)
   }
-  return result;
+  return result
 }
+
 function checkDescriptor(bits) {
   const debug = { hash: {}, sig: {} }
   let passed = 0
   if (
-    (bits[1].toString() === '0000') ||
-    (bits[1].toString() === '0001') ||
-    (bits[1].toString() === '0010')
+    (bits[1].toString() === '0000')
+    || (bits[1].toString() === '0001')
+    || (bits[1].toString() === '0010')
   ) {
     debug.hash.message = 'valid HASH mechanism'
     debug.hash.result = true
@@ -104,9 +107,9 @@ const prepareDescriptorFromHex = (q) => {
 }
 
 const bech32 = (q) => {
-  const decoded = b32.decode(q)  // will fail if address invalid
+  const decoded = b32.decode(q) // will fail if address invalid
   const bin = new Uint8Array(b32.fromWords(decoded.words))
-  
+
   const descriptor = (split2Bits(bin, 4))[0]
   return checkDescriptor(descriptor)
 }
@@ -179,4 +182,3 @@ exports.hexString = hexString
 // module.exports = prepareDescriptorFromHex
 // module.exports = checkQ
 // module.exports = checklength
-
