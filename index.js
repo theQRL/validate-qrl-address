@@ -47,7 +47,44 @@ function toByteArray(hexString) {
   }
   return result;
 }
-
+function checkDescriptor(bits) {
+  const debug = { hash: {}, sig: {} }
+  let passed = 0
+  if (
+    (bits[1].toString() === '0000') ||
+    (bits[1].toString() === '0001') ||
+    (bits[1].toString() === '0010')
+  ) {
+    debug.hash.message = 'valid HASH mechanism'
+    debug.hash.result = true
+    passed += 1
+    if (bits[1].toString() === '0000') { debug.hash.function = 'SHA2-256' }
+    if (bits[1].toString() === '0001') { debug.hash.function = 'SHAKE-128' }
+    if (bits[1].toString() === '0010') { debug.hash.function = 'SHAKE-256' }
+  } else {
+    debug.hash.message = 'invalid HASH mechanism'
+    debug.hash.result = false
+  }
+  if (bits[0].toString() === '0000') {
+    debug.sig.message = 'valid signature scheme'
+    debug.sig.result = true
+    debug.sig.type = 'XMSS'
+    let height = parseInt(bits[3], 2)
+    height *= 2
+    debug.sig.height = height
+    debug.sig.number = Math.pow(2, height) // eslint-disable-line
+    passed += 1
+  } else {
+    debug.sig.message = 'invalid signature scheme'
+    debug.sig.result = false
+  }
+  if (passed === 2) {
+    debug.result = true
+  } else {
+    debug.result = false
+  }
+  return debug
+}
 const checkHash = (q) => {
   const qs = q.slice(1, 71)
   const qa = hexToBytes(q.slice(71, 80))
@@ -59,91 +96,19 @@ const checkHash = (q) => {
   )
 }
 
-const checkXMSS = (q) => {
-  const debug = { hash: {}, sig: {} }
-  let passed = 0
+const prepareDescriptorFromHex = (q) => {
   const qr = q.slice(1, 7)
   const a = toByteArray(qr)
-  const b = (split2Bits(a, 4))[0]
-  if (
-    (b[1].toString() === '0000') ||
-    (b[1].toString() === '0001') ||
-    (b[1].toString() === '0010')
-  ) {
-    debug.hash.message = 'valid HASH mechanism'
-    debug.hash.result = true
-    passed += 1
-    if (b[1].toString() === '0000') { debug.hash.function = 'SHA2-256' }
-    if (b[1].toString() === '0001') { debug.hash.function = 'SHAKE-128' }
-    if (b[1].toString() === '0010') { debug.hash.function = 'SHAKE-256' }
-  } else {
-    debug.hash.message = 'invalid HASH mechanism'
-    debug.hash.result = false
-  }
-  if (b[0].toString() === '0000') {
-    debug.sig.message = 'valid signature scheme'
-    debug.sig.result = true
-    debug.sig.type = 'XMSS'
-    let height = parseInt(b[3], 2)
-    console.log("height", height)
-    height *= 2
-    debug.sig.height = height
-    debug.sig.number = Math.pow(2, height) // eslint-disable-line
-    passed += 1
-  } else {
-    debug.sig.message = 'invalid signature scheme'
-    debug.sig.result = false
-  }
-  if (passed === 2) {
-    debug.result = true
-  } else {
-    debug.result = false
-  }
-  return debug
+  const descriptor = (split2Bits(a, 4))[0]
+  return descriptor
 }
 
 const bech32 = (q) => {
-  decoded = b32.decode(q)  // will fail if address invalid
-  bin = new Uint8Array(b32.fromWords(decoded.words))
+  const decoded = b32.decode(q)  // will fail if address invalid
+  const bin = new Uint8Array(b32.fromWords(decoded.words))
   
-  const debug = { hash: {}, sig: {} }
-  let passed = 0
-  const b = (split2Bits(bin, 4))[0]
-  if (
-    (b[1].toString() === '0000') ||
-    (b[1].toString() === '0001') ||
-    (b[1].toString() === '0010')
-  ) {
-    debug.hash.message = 'valid HASH mechanism'
-    debug.hash.result = true
-    passed += 1
-    if (b[1].toString() === '0000') { debug.hash.function = 'SHA2-256' }
-    if (b[1].toString() === '0001') { debug.hash.function = 'SHAKE-128' }
-    if (b[1].toString() === '0010') { debug.hash.function = 'SHAKE-256' }
-  } else {
-    debug.hash.message = 'invalid HASH mechanism'
-    debug.hash.result = false
-  }
-  if (b[0].toString() === '0000') {
-    debug.sig.message = 'valid signature scheme'
-    debug.sig.result = true
-    debug.sig.type = 'XMSS'
-    let height = parseInt(b[3], 2)
-    height *= 2
-    debug.sig.height = height
-    debug.sig.number = Math.pow(2, height) // eslint-disable-line
-    passed += 1
-  } else {
-    debug.sig.message = 'invalid signature scheme'
-    debug.sig.result = false
-  }
-  if (passed === 2) {
-    debug.result = true
-  } else {
-    debug.result = false
-  }
-  return debug
-
+  const descriptor = (split2Bits(bin, 4))[0]
+  return checkDescriptor(descriptor)
 }
 
 const hexString = (q) => {
@@ -175,7 +140,8 @@ const hexString = (q) => {
     debug.startQ.result = false
   }
 
-  const hashSig = checkXMSS(q)
+  const d = prepareDescriptorFromHex(q)
+  const hashSig = checkDescriptor(d)
   debug.signature.message = `${hashSig.hash.message} / ${hashSig.sig.message}`
   debug.sig.message = hashSig.sig.message
   debug.sig.result = hashSig.sig.result
@@ -210,7 +176,7 @@ const hexString = (q) => {
 
 exports.bech32 = bech32
 exports.hexString = hexString
-// module.exports = checkXMSS
+// module.exports = prepareDescriptorFromHex
 // module.exports = checkQ
 // module.exports = checklength
 
