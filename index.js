@@ -210,8 +210,17 @@ const hexString = (q) => {
   return debug
 }
 
+const validate = (address) => {
+  // Takes any address, hex or Bech32, and validates it.
+  if (address[0] === 'q') {
+    return bech32(address)
+  }
+  return hexString(address)
+}
+
 exports.bech32 = bech32
 exports.hexString = hexString
+exports.validate = validate
 // module.exports = prepareDescriptorFromHex
 // module.exports = checkQ
 // module.exports = checklength

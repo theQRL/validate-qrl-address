@@ -125,3 +125,23 @@ describe('#validateBech32', function() {
     expect(result.sig.result).to.equal(false);
   });
 });
+
+
+describe('#justValidateBothFormats', function() {
+  it('should return true: this bech32 address is a valid address', function() {
+    var result = validate.validate('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2actm2lc7ze43w7hlys5');
+    expect(result).to.have.property('result', true);
+  });
+  it('should return true: this hexstring address is a valid address', function() {
+    var result = validate.validate('Q01070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e8271a6bd');
+    expect(result).to.have.property('result', true);
+  });
+  it('should return true: this bech32 address is an invalid address', function() {
+    var result = validate.validate('q1qyrsq5xnr3l3ywv47ztmexpqn6frr4nrmsnwqcy9ma2acc7ze43w7hlys5');
+    expect(result).to.have.property('result', false);
+  });
+  it('should return true: this hexstring address is an invalid address', function() {
+    var result = validate.validate('Q01070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2fe3c2cd62e8271a6bd');
+    expect(result).to.have.property('result', false);
+  });
+});
