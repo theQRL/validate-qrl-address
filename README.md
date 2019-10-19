@@ -6,7 +6,11 @@
 
 An npm package to validate (and extract data from) QRL addresses.
 
-## Code Example
+The `dist\validateQrlAddress.js` file can be used within a web browser
+
+## Code Examples
+
+### where npm packages can be used:
 
 	var validate = require('@theqrl/validate-qrl-address');
 	var isValid = validate.hexString('Q01070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e8271a6bd')
@@ -21,6 +25,14 @@ An npm package to validate (and extract data from) QRL addresses.
 	XMSS
 	16384
 	SHAKE-128
+
+### in the browser:
+
+	<script src="../dist/validateQrlAddress.js"></script>
+	<script>
+	var result = validateQrlAddress.hexString('Q01070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e8271a6bd');
+	console.log(result);
+	</script>
 
 ## Motivation
 

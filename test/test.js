@@ -1,7 +1,14 @@
 'use strict';
 
 var expect = require('chai').expect;
-var validate = require('../index.js');
+var validate = require('../src/index.js');
+
+describe('#version', function() {
+  it('.version should report same version as in npm package.json file (=' + process.env.npm_package_version + ')', function() {
+    var result = validate.version();
+    expect(result).to.equal(process.env.npm_package_version);
+  });
+});
 
 describe('#validateHexString', function() {
   it('should return true: argument is a valid address', function() {
@@ -67,5 +74,9 @@ describe('#validateHexString', function() {
   it('should return false: argument does not have a valid signature scheme', function() {
     var result = validate.hexString('Q13070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e8271a6bd');
     expect(result.sig.result).to.equal(false);
+  });
+  it('should return false where no argument is passed', function() {
+    var result = validate.hexString();
+    expect(result.result).to.equal(false);
   });
 });
