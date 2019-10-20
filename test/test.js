@@ -79,4 +79,16 @@ describe('#validateHexString', function() {
     var result = validate.hexString();
     expect(result.result).to.equal(false);
   });
+  it('should always return false where zero length hexstring is passed', function() {
+    var result = validate.hexString('');
+    expect(result.result).to.equal(false);
+  });
+  it('should always return false where single digit hexstring is passed', function() {
+    var result = validate.hexString('Q');
+    expect(result.result).to.equal(false);
+  });
+  it('should always return false where two digit hexstring is passed', function() {
+    var result = validate.hexString('Q1');
+    expect(result.result).to.equal(false);
+  });
 });
