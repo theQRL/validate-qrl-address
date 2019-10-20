@@ -369,31 +369,36 @@ function hexString(q) {
     debug.startQ.result = false;
   }
 
-  const hashSig = checkXMSS(q);
-  debug.signature.message = `${hashSig.hash.message} / ${hashSig.sig.message}`;
-  debug.sig.message = hashSig.sig.message;
-  debug.sig.result = hashSig.sig.result;
-  debug.hash.result = hashSig.hash.result;
-  debug.hash.message = hashSig.hash.message;
-  debug.hash.function = hashSig.hash.function;
-  debug.sig.height = hashSig.sig.height;
-  debug.sig.number = hashSig.sig.number;
-  debug.sig.type = hashSig.sig.type;
-  if (hashSig.result) {
-    debug.signature.result = true;
-    passed += 1;
+  if (debug.len.result === false) {
+    debug.sig.message = "invalid signature scheme";
+    debug.sig.result = false;
   } else {
-    debug.signature.result = false;
+    const hashSig = checkXMSS(q);
+    debug.signature.message = `${hashSig.hash.message} / ${hashSig.sig.message}`;
+    debug.sig.message = hashSig.sig.message;
+    debug.sig.result = hashSig.sig.result;
+    debug.hash.result = hashSig.hash.result;
+    debug.hash.message = hashSig.hash.message;
+    debug.hash.function = hashSig.hash.function;
+    debug.sig.height = hashSig.sig.height;
+    debug.sig.number = hashSig.sig.number;
+    debug.sig.type = hashSig.sig.type;
+    if (hashSig.result) {
+      debug.signature.result = true;
+      passed += 1;
+    } else {
+      debug.signature.result = false;
+    }
+    if (checkHash(q)) {
+      debug.checksum.message = "checksum ok";
+      debug.checksum.result = true;
+      passed += 1;
+    } else {
+      debug.checksum.message = "bad address checksum";
+      debug.checksum.result = false;
+    }
   }
 
-  if (checkHash(q)) {
-    debug.checksum.message = "checksum ok";
-    debug.checksum.result = true;
-    passed += 1;
-  } else {
-    debug.checksum.message = "bad address checksum";
-    debug.checksum.result = false;
-  }
   if (passed === 4) {
     debug.result = true;
   } else {
@@ -408,7 +413,7 @@ module.exports = {
    * @return {string} version
    */
    version: function() {
-     return '2.0.0'
+     return '2.0.1'
    },
    hexString: function (q) {
      if (q === undefined) {
