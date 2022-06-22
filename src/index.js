@@ -223,7 +223,7 @@ module.exports = {
    * @return {string} version
    */
   version() {
-    return '3.0.0';
+    return '3.0.1';
   },
   hexString(q) {
     if (q === undefined) {
