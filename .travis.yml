@@ -1,11 +1,13 @@
 dist: focal
 language: node_js
 node_js:
-  - 16
+  - 24
 install:
   - npm install
 
 script:
   - npm run cover
 
-after_script: "cat coverage/lcov.info | node_modules/coveralls/bin/coveralls.js"
+after_script:
+  - curl -sL https://coveralls.io/coveralls-linux.tar.gz | tar -xz && ./coveralls report coverage/lcov.info
+
