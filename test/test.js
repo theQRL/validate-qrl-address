@@ -88,12 +88,35 @@ describe('#validateHexString', function () {
     expect(result.hash.function).to.equal('SHA2-256');
   });
   it('should return shake-256 as name of the hashing method', function () {
-    const result = validate.hexString('Q02260060d974fd1faf2c2b0c91d9e33cae9f1b42208c62169f946373ae64198b97b6479f6c8ce5');
+    // Fixed: AF must be 0 (SHA256_2X), so byte[1] = AF << 4 | P1 = 0x26 -> 0x06
+    const result = validate.hexString('Q02060060d974fd1faf2c2b0c91d9e33cae9f1b42208c62169f946373ae64198b97b6479f6c8ce5');
     expect(result.hash.function).to.equal('SHAKE-256');
   });
   it('should return false: argument does not have a valid signature scheme', function () {
     const result = validate.hexString('Q13070050d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e8271a6bd');
     expect(result.sig.result).to.equal(false);
+  });
+  it('should return false: argument does not have a valid address format', function () {
+    // AF=4 (not SHA256_2X) - need to generate valid address with checksum
+    const sha256 = require('sha256');
+
+    function hexToBytes(hex) {
+      const bytes = [];
+      for (let i = 0; i < hex.length; i += 2) {
+        bytes.push(parseInt(hex.substr(i, 2), 16));
+      }
+      return bytes;
+    }
+
+    const descriptor = '004700'; // AF=4 (reserved)
+    const publicKey = '50d31c7f123995f097bc98209e9231d663dc26e06085df55dc2f6afe3c2cd62e';
+    const fullDesc = descriptor + publicKey;
+    const hash = sha256(hexToBytes(fullDesc));
+    const checksum = hash.slice(-8);
+    const address = 'Q' + descriptor + publicKey + checksum;
+
+    const result = validate.hexString(address);
+    expect(result.hash.result).to.equal(false);
   });
   it('should return false where no argument is passed', function () {
     const result = validate.hexString();

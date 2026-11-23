@@ -48,7 +48,7 @@ Provides a utility function to nodejs based applications. Part of a suite of dev
 
 ## API Reference
 
-TODO (but the object returned is pretty self explanatory)
+Use `hexString(address).result` to check address validity. The input must be an uppercase `Q` followed by 78 hexadecimal digits. QRL v1 consensus requires address format 0 and a matching checksum. The `sig`, `hash`, and `signature` fields provide descriptor diagnostics and may report an issue for a valid on-chain address.
 
 Inspecting [this Pen](https://codepen.io/jplomas/pen/GQbwzW) may be of use.
 
