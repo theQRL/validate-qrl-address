@@ -202,189 +202,107 @@ var validateQrlAddress = (() => {
   var require_index = __commonJS({
     "src/index.js"(exports, module) {
       var sha256 = require_sha256();
-      var checklength = (q) => {
-        if (q.length === 79) {
-          return true;
-        }
-        return false;
-      };
-      var checkQ = (q) => {
-        if (q.slice(0, 1) === "Q") {
-          return true;
-        }
-        return false;
-      };
+      var ADDRESS_PREFIX = "Q";
+      var DESCRIPTOR_LENGTH_BYTES = 3;
+      var PUBLIC_KEY_LENGTH_BYTES = 32;
+      var CHECKSUM_LENGTH_BYTES = 4;
+      var PAYLOAD_LENGTH_BYTES = DESCRIPTOR_LENGTH_BYTES + PUBLIC_KEY_LENGTH_BYTES;
+      var TOTAL_INTERNAL_LENGTH = PAYLOAD_LENGTH_BYTES + CHECKSUM_LENGTH_BYTES;
+      var ADDRESS_LENGTH = 1 + TOTAL_INTERNAL_LENGTH * 2;
+      var CHECKSUM_START = 1 + PAYLOAD_LENGTH_BYTES * 2;
+      var HASH_FUNCTION_SHA2_256 = 0;
+      var HASH_FUNCTION_SHAKE_128 = 1;
+      var HASH_FUNCTION_SHAKE_256 = 2;
+      var SIGNATURE_XMSS = 0;
+      var SIGNATURE_MULTISIG = 1;
+      var ADDRESS_FORMAT_SHA256_2X = 0;
+      var MULTISIG_MARKER = 17;
+      var HASH_FUNCTIONS = [
+        "SHA2-256",
+        "SHAKE-128",
+        "SHAKE-256"
+      ];
       function hexToBytes(hex) {
         const bytes = [];
-        let c = 0;
-        for (c = 0; c < hex.length; c += 2) {
-          bytes.push(parseInt(hex.substr(c, 2), 16));
+        for (let i = 0; i < hex.length; i += 2) {
+          const pair = hex.slice(i, i + 2);
+          if (!/^[0-9a-fA-F]{2}$/.test(pair)) {
+            throw new Error(`Invalid hex pair '${pair}' at position ${i}`);
+          }
+          bytes.push(parseInt(pair, 16));
         }
         return bytes;
       }
-      function byte2bits(a) {
-        let tmp = "";
-        let i = 128;
-        for (i = 128; i >= 1; i /= 2) tmp += a & i ? "1" : "0";
-        return tmp;
-      }
-      function split2Bits(a, n) {
-        let buff = "";
-        const b = [];
-        let i = 0;
-        for (i = 0; i < a.length; i += 1) {
-          buff += byte2bits(a[i]);
-          while (buff.length >= n) {
-            b.push(buff.substr(0, n));
-            buff = buff.substr(n);
-          }
+      function describeSignature(bytes, addressFormat) {
+        const scheme = bytes[0] >> 4;
+        const hashFunction = HASH_FUNCTIONS[bytes[0] & 15];
+        const validFormat = addressFormat === ADDRESS_FORMAT_SHA256_2X;
+        const isMultisig = bytes[0] === MULTISIG_MARKER;
+        const hash = {
+          result: validFormat && hashFunction !== void 0,
+          function: validFormat ? isMultisig ? "SHA2-256" : hashFunction : void 0
+        };
+        if (!validFormat) {
+          hash.message = `invalid address format: ${addressFormat} (must be 0 for SHA256_2X)`;
+        } else {
+          hash.message = hash.result ? "valid HASH mechanism" : `invalid HASH mechanism: ${bytes[0] & 15}`;
         }
-        return [b, buff];
-      }
-      function toByteArray(input) {
-        const result = [];
-        let hs = input;
-        while (hs.length >= 2) {
-          result.push(parseInt(hs.substring(0, 2), 16));
-          hs = hs.substring(2, hs.length);
-        }
-        return result;
-      }
-      function checkHash(q) {
-        const qs = q.slice(1, 71);
-        const qa = hexToBytes(q.slice(71, 80));
-        const qx = sha256(hexToBytes(qs));
-        const qm = qx.slice(56, 64);
-        const qj = hexToBytes(qm);
-        return qj[0] === qa[0] && qj[1] === qa[1] && qj[2] === qa[2] && qj[3] === qa[3];
-      }
-      function isMultisig(b) {
-        let result = false;
-        if (b[0].toString() === "0001" && b[1].toString() === "0001" && b[2].toString() === "0000" && b[3].toString() === "0000" && b[4].toString() === "0000" && b[5].toString() === "0000") {
-          result = true;
-        }
-        return result;
-      }
-      function checkXMSS(q) {
-        const debug = { hash: {}, sig: {} };
-        let passed = 0;
-        const qr = q.slice(1, 7);
-        const a = toByteArray(qr);
-        const b = split2Bits(a, 4)[0];
-        if (isMultisig(b)) {
-          return {
+        const sig = { result: false, message: "", height: void 0, number: void 0, type: void 0 };
+        if (isMultisig) {
+          Object.assign(sig, {
             result: true,
-            sig: {
-              type: "MULTISIG",
-              result: true,
-              message: "valid signature scheme",
-              height: 0,
-              number: 0
-            },
-            hash: {
-              message: "valid HASH mechanism",
-              result: true,
-              function: "SHA2-256"
-            }
-          };
-        }
-        if (b[1].toString() === "0000" || b[1].toString() === "0001" || b[1].toString() === "0010") {
-          debug.hash.message = "valid HASH mechanism";
-          debug.hash.result = true;
-          passed += 1;
-          if (b[1].toString() === "0000") {
-            debug.hash.function = "SHA2-256";
-          }
-          if (b[1].toString() === "0001") {
-            debug.hash.function = "SHAKE-128";
-          }
-          if (b[1].toString() === "0010") {
-            debug.hash.function = "SHAKE-256";
-          }
+            message: "valid signature scheme",
+            type: "MULTISIG",
+            height: 0,
+            number: 0
+          });
+        } else if (bytes[2] !== 0) {
+          sig.message = "invalid signature scheme: reserved byte must be 0";
+        } else if (scheme !== SIGNATURE_XMSS) {
+          sig.message = `invalid signature scheme: ${scheme}`;
         } else {
-          debug.hash.message = "invalid HASH mechanism";
-          debug.hash.result = false;
+          sig.type = "XMSS";
+          const height = (bytes[1] & 15) * 2;
+          if (height < 4) {
+            sig.message = `invalid XMSS height: ${height} (must be even, 4-30)`;
+          } else {
+            sig.result = true;
+            sig.message = "valid signature scheme";
+            sig.height = height;
+            sig.number = 2 ** height;
+          }
         }
-        if (b[0].toString() === "0000") {
-          debug.sig.message = "valid signature scheme";
-          debug.sig.result = true;
-          debug.sig.type = "XMSS";
-          let height = parseInt(b[3], 2);
-          height *= 2;
-          debug.sig.height = height;
-          debug.sig.number = Math.pow(2, height);
-          passed += 1;
-        } else {
-          debug.sig.message = "invalid signature scheme";
-          debug.sig.result = false;
-        }
-        if (passed === 2) {
-          debug.result = true;
-        } else {
-          debug.result = false;
-        }
-        return debug;
+        return { hash, sig };
       }
       function hexString(q) {
-        let passed = 0;
+        const validPrefix = q.startsWith(ADDRESS_PREFIX);
+        const validLength = q.length === ADDRESS_LENGTH;
         const debug = {
-          len: {},
-          startQ: {},
+          len: {
+            message: validLength ? `length ok (${ADDRESS_LENGTH} characters)` : `length bad (${q.length} characters, expected ${ADDRESS_LENGTH})`,
+            result: validLength
+          },
+          startQ: {
+            message: validPrefix ? `starts with ${ADDRESS_PREFIX} ok` : `does not start with ${ADDRESS_PREFIX}`,
+            result: validPrefix
+          },
           signature: {},
           checksum: {},
           hash: {},
-          sig: {}
+          sig: { message: "invalid signature scheme", result: false },
+          result: false
         };
-        if (checklength(q)) {
-          debug.len.message = "length ok";
-          debug.len.result = true;
-          passed += 1;
-        } else {
-          debug.len.message = "length bad";
-          debug.len.result = false;
-        }
-        if (checkQ(q)) {
-          debug.startQ.message = "starts with Q ok";
-          debug.startQ.result = true;
-          passed += 1;
-        } else {
-          debug.startQ.message = "does not start with Q";
-          debug.startQ.result = false;
-        }
-        if (debug.len.result === false) {
-          debug.sig.message = "invalid signature scheme";
-          debug.sig.result = false;
-        } else {
-          const hashSig = checkXMSS(q);
-          debug.signature.message = `${hashSig.hash.message} / ${hashSig.sig.message}`;
-          debug.sig.message = hashSig.sig.message;
-          debug.sig.result = hashSig.sig.result;
-          debug.hash.result = hashSig.hash.result;
-          debug.hash.message = hashSig.hash.message;
-          debug.hash.function = hashSig.hash.function;
-          debug.sig.height = hashSig.sig.height;
-          debug.sig.number = hashSig.sig.number;
-          debug.sig.type = hashSig.sig.type;
-          if (hashSig.result) {
-            debug.signature.result = true;
-            passed += 1;
-          } else {
-            debug.signature.result = false;
-          }
-          if (checkHash(q)) {
-            debug.checksum.message = "checksum ok";
-            debug.checksum.result = true;
-            passed += 1;
-          } else {
-            debug.checksum.message = "bad address checksum";
-            debug.checksum.result = false;
-          }
-        }
-        if (passed === 4) {
-          debug.result = true;
-        } else {
-          debug.result = false;
-        }
+        if (!validLength) return debug;
+        const bytes = hexToBytes(q.slice(1));
+        const addressFormat = bytes[1] >> 4;
+        const { hash, sig } = describeSignature(bytes, addressFormat);
+        debug.hash = hash;
+        debug.sig = sig;
+        debug.signature = { message: `${hash.message} / ${sig.message}`, result: hash.result && sig.result };
+        const expectedChecksum = sha256(bytes.slice(0, PAYLOAD_LENGTH_BYTES)).slice(-CHECKSUM_LENGTH_BYTES * 2);
+        const validChecksum = q.slice(CHECKSUM_START).toLowerCase() === expectedChecksum;
+        debug.checksum = { message: validChecksum ? "checksum ok" : "bad address checksum", result: validChecksum };
+        debug.result = validPrefix && addressFormat === ADDRESS_FORMAT_SHA256_2X && validChecksum;
         return debug;
       }
       module.exports = {
@@ -393,13 +311,52 @@ var validateQrlAddress = (() => {
          * @return {string} version
          */
         version() {
-          return "3.0.1";
+          return "3.0.2";
         },
+        /**
+         * Validates a QRL address hex string
+         * @param {string} q - Address to validate (79 hex characters starting with Q)
+         * @returns {object} Validation result object with detailed info
+         */
         hexString(q) {
-          if (q === void 0) {
+          if (q === void 0 || q === null) {
             return { result: false, error: "Missing parameter" };
           }
-          return hexString(q);
+          if (typeof q !== "string") {
+            return { result: false, error: "Parameter must be a string" };
+          }
+          if (q.length === 0) {
+            return { result: false, error: "Empty address" };
+          }
+          try {
+            return hexString(q);
+          } catch (error) {
+            return { result: false, error: error.message };
+          }
+        },
+        // Constants exported for external use
+        CONSTANTS: {
+          ADDRESS_PREFIX,
+          ADDRESS_LENGTH,
+          DESCRIPTOR_LENGTH_BYTES,
+          PUBLIC_KEY_LENGTH_BYTES,
+          CHECKSUM_LENGTH_BYTES,
+          HF_START: 0,
+          HF_END: 3,
+          SIG_START: 4,
+          SIG_END: 7,
+          P1_START: 8,
+          P1_END: 11,
+          AF_START: 12,
+          AF_END: 15,
+          P3_START: 16,
+          P3_END: 23,
+          HASH_FUNCTION_SHA2_256,
+          HASH_FUNCTION_SHAKE_128,
+          HASH_FUNCTION_SHAKE_256,
+          SIGNATURE_XMSS,
+          SIGNATURE_MULTISIG,
+          ADDRESS_FORMAT_SHA256_2X
         }
       };
     }
